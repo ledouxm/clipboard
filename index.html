@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<title></title>
+</head>
+<body>
+  <input id="inp" autofocus="" type="text" name="">
+  <button onclick="addClipboard()">Add</button>
+<script type="text/javascript">
+  const robot=require('robotjs');
+  const { clipboard, ipcRenderer,remote }=require('electron');
+
+
+  const mongoose=require('mongoose');
+  mongoose.connect('mongodb://localhost/shortcutApp',{ useNewUrlParser:true });
+
+  const Shortcuts=new mongoose.Schema({
+    alias:String,
+    text:String
+  });
+
+  const ShortcutsModel=mongoose.model('Shortcuts',Shortcuts);
+
+  remote.getGlobal('sharedObject').shortcutModel = ShortcutsModel;
+
+  ShortcutsModel.find({},function(err,docs){
+    console.log(docs);
+  });
+
+
+  let input=document.getElementById('inp');
+  document.addEventListener('keydown',function(event){
+    if(event.code=="Enter"){
+      getClipboard();
+    }
+  });
+
+  console.log(clipboard);
+
+  function newShortcut(shortcut,text){
+    let tmp=new ShortcutsModel();
+    tmp.alias=shortcut;
+    tmp.text=text;
+    tmp.save();
+  }
+
+  function getClipboard(){
+    ShortcutsModel.findOne({ alias:input.value },function(err,doc){
+      if(err)console.error(err);
+      else{
+        clipboard.clear();
+        clipboard.writeText(doc._doc.text);
+        ipcRenderer.sendSync('hideMain','ping');
+      }
+    });
+  }
+
+  function addClipboard(){
+    console.log(ipcRenderer.sendSync('add','ping'));
+  }
+
+
+  let img=document.getElementById('oui');
+
+  function screen(){
+    let capt=(robot.screen.capture());
+    img.src = (capt.image);
+  }
+
+
+  function getScreenshot(){
+    let oui=fs.readdirSync('./public');
+    console.log(oui);
+    for(let i of oui){
+      console.log(i);
+      let tmp=fs.readfileSync('./public/'+i);
+    }
+  }
+</script>
+
+</body>
+</html>
